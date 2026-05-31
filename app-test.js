@@ -9,6 +9,11 @@ chai.should();
 chai.use(chaiHttp); 
 
 describe('Planets API Suite', () => {
+    after((done) => {
+        mongoose.connection.close(() => {
+            done();
+        });
+    });
 
     describe('Fetching Planet Details', () => {
         it('it should fetch a planet named Mercury', (done) => {
