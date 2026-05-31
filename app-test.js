@@ -9,10 +9,9 @@ chai.should();
 chai.use(chaiHttp); 
 
 describe('Planets API Suite', () => {
-    after((done) => {
-        mongoose.connection.close(() => {
-            done();
-        });
+    // 🟢 जुना after ब्लॉक काढून फक्त एवढाच कोड तिथे लिहा:
+    after(async () => {
+        await mongoose.connection.close();
     });
 
     describe('Fetching Planet Details', () => {
