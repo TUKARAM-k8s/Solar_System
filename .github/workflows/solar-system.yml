@@ -1,11 +1,10 @@
-name: Solar System Workflow
+name: solar system workflow
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-      - 'feature/*'
-
+      - feature/**
 jobs:
   unit-testing:
     name: Unit Testing
@@ -15,12 +14,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Node.js version 18
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run unit tests
+      - name: Run unit_tests
         run: npm test
