@@ -6,21 +6,26 @@ on:
       - main
       - feature/**
 
+# 🟢 बदल १: आपण गिटहब सिक्रेटमधून थेट पूर्ण कनेक्शन स्ट्रिंग इथे पास करत आहोत
 env:
-    MONGO_URI: mongodb+srv://supercluster.db3jj.mongodb.net/superData
-    MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
-    MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+  MONGO_URI: ${{ secrets.MONGO_URI }}
 
 jobs:
   unit-testing:
     name: Unit Testing
     runs-on: ubuntu-latest
+    
+    # 🟢 बदल २: हा env ब्लॉक या विशिष्ट जॉबला (Unit Testing) सुद्धा मिळणे गरजेचे आहे
+    env:
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 💡 टीप: इथे मी setup-node चं व्हर्जन सुद्धा v3 वरून v4 केलं आहे, जेणेकरून एरर्स येणार नाहीत
       - name: Set up Node.js version 18
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
