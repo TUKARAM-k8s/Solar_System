@@ -15,7 +15,6 @@ jobs:
     name: Unit Testing
     runs-on: ubuntu-latest
     
-    # 🟢 बदल २: हा env ब्लॉक या विशिष्ट जॉबला (Unit Testing) सुद्धा मिळणे गरजेचे आहे
     env:
       MONGO_URI: ${{ secrets.MONGO_URI }}
       
