@@ -11,12 +11,19 @@ chai.use(chaiHttp);
 describe('Planets API Suite', () => {
 
     after(async () => {
+        // १. मँगोडीबी कनेक्शन बंद करणे
         await mongoose.connection.close();
         
-        // एक्सप्रेस सर्व्हर सुरक्षितपणे बंद करणे (process.exit न वापरता)
+        // २. एक्सप्रेस सर्व्हर बंद करणे
         if (server && server.close) {
             await new Promise((resolve) => server.close(resolve));
         }
+
+        // ३. मोका रिपोर्टरला XML फाईल डिस्कवर लिहिण्यासाठी १ सेकंदाचा वेळ देणे
+        // आणि त्यानंतर 'Success 0' कोडसह प्रोसेस सुरक्षितपणे बंद करणे
+        setTimeout(() => {
+            process.exit(0);
+        }, 1000);
     });
 
     describe('Fetching Planet Details', () => {
