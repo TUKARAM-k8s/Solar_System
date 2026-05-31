@@ -10,14 +10,21 @@ chai.use(chaiHttp);
 
 describe('Planets API Suite', () => {
 
-    after((done) => {
-        mongoose.connection.close(() => {
-            // १. मोका रिपोर्टरला फाईल पूर्ण राईट करण्यासाठी आणि रिसोर्सेस क्लोज करण्यासाठी वेळ देणे
+    after(async () => {
+        try {
+            if (mongoose.connection) {
+                await mongoose.connection.close();
+            }
+            if (server && server.close) {
+                await new Promise((resolve) => server.close(resolve));
+            }
+        } catch (error) {
+            console.log("Cleanup error:", error);
+        } finally {
             setTimeout(() => {
                 process.exit(0);
-            }, 1000);
-            done();
-        });
+            }, 500);
+        }
     });
 
     describe('Fetching Planet Details', () => {
