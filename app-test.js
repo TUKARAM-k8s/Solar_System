@@ -10,11 +10,13 @@ chai.use(chaiHttp);
 
 describe('Planets API Suite', () => {
 
-    
     after(async () => {
         await mongoose.connection.close();
-        // एक्सप्रेस सर्व्हर सुरक्षितपणे बंद करण्यासाठी प्रोसेस किल करणे
-        process.exit(0); 
+        
+        // एक्सप्रेस सर्व्हर सुरक्षितपणे बंद करणे (process.exit न वापरता)
+        if (server && server.close) {
+            await new Promise((resolve) => server.close(resolve));
+        }
     });
 
     describe('Fetching Planet Details', () => {
