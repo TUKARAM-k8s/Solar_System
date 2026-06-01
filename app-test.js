@@ -19,10 +19,9 @@ describe('Planets API Suite', () => {
             mongoose.connection.once('open', () => done());
         }
     });
-    
+
     after(async () => {
         await mongoose.connection.close();
-        process.exit(0);
     });
 
     describe('Fetching Planet Details', () => {
