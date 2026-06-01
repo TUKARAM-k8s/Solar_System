@@ -10,6 +10,16 @@ chai.use(chaiHttp);
 
 describe('Planets API Suite', () => {
 
+    before((done) => {
+        // जर मँगूझ आधीच कनेक्टेड असेल तर पुढे जा
+        if (mongoose.connection.readyState === 1) {
+            done();
+        } else {
+            // कनेक्शन यशस्वी होण्याची वाट पाहून मगच टेस्ट सुरू करा
+            mongoose.connection.once('open', () => done());
+        }
+    });
+    
     after(async () => {
         await mongoose.connection.close();
         process.exit(0);
