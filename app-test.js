@@ -21,12 +21,21 @@ describe('Planets API Suite', () => {
     });
 
     after(async () => {
-        // मँगोडीबी कनेक्शन बंद करणे
-        await mongoose.connection.close();
-        
-        // एक्सप्रेस सर्व्हर सुरक्षितपणे बंद करून पोर्ट ३००० मोकळा करणे
-        if (server && server.close) {
-            await new Promise((resolve) => server.close(resolve));
+        try {
+            // १. मँगूझ कनेक्शन बंद करणे
+            await mongoose.connection.close();
+            
+            // २. एक्सप्रेस सर्व्हर सुरक्षितपणे शटडाऊन करणे
+            if (server && server.close) {
+                await new Promise((resolve) => server.close(resolve));
+            }
+        } catch (error) {
+            console.log("Cleanup error:", error);
+        } finally {
+            // ३. मोका रिपोर्टरला XML फाईल पूर्ण लिहिण्यासाठी १ सेकंदाचा वेळ देऊन क्लीन एक्झिट करणे
+            setTimeout(() => {
+                process.exit(0); 
+            }, 1000);
         }
     });
 
