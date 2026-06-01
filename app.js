@@ -68,8 +68,14 @@ app.get('/ready', function(req, res) {
     res.send({ "status": "ready" });
 });
 
-app.listen(3000, () => {
+// app.listen(3000, () => {
+//    console.log("Server successfully running on port - " + 3000);
+//});
+
+const server = app.listen(3000, () => {
     console.log("Server successfully running on port - " + 3000);
 });
+
+module.exports = server; // 'app' ऐवजी थेट चालू असलेला सर्व् instance एक्सपोर्ट करणे
 
 module.exports = app;

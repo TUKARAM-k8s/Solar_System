@@ -21,7 +21,13 @@ describe('Planets API Suite', () => {
     });
 
     after(async () => {
+        // मँगोडीबी कनेक्शन बंद करणे
         await mongoose.connection.close();
+        
+        // एक्सप्रेस सर्व्हर सुरक्षितपणे बंद करून पोर्ट ३००० मोकळा करणे
+        if (server && server.close) {
+            await new Promise((resolve) => server.close(resolve));
+        }
     });
 
     describe('Fetching Planet Details', () => {
