@@ -11,20 +11,8 @@ chai.use(chaiHttp);
 describe('Planets API Suite', () => {
 
     after(async () => {
-        try {
-            if (mongoose.connection) {
-                await mongoose.connection.close();
-            }
-            if (server && server.close) {
-                await new Promise((resolve) => server.close(resolve));
-            }
-        } catch (error) {
-            console.log("Cleanup error:", error);
-        } finally {
-            setTimeout(() => {
-                process.exit(0);
-            }, 500);
-        }
+        await mongoose.connection.close();
+        process.exit(0);
     });
 
     describe('Fetching Planet Details', () => {

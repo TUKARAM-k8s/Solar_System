@@ -1,0 +1,6 @@
+{
+  "reporter": "mocha-junit-reporter",
+  "reporter-options": [
+    "mochaFile=./test-results.xml"
+  ]
+}
