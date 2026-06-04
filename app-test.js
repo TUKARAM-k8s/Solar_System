@@ -10,20 +10,24 @@ chai.use(chaiHttp);
 describe('Planets API Suite', () => {
 
     // 🟢 फ्रेश डेटा री-सीड करण्याचा जादूई बिफोर ब्लॉक
-    before(async () => {
-        console.log("Waiting 2 seconds for DB to be ready and seeding fresh data...");
+    // 🟢 फक्त हा नवीन आणि सुरक्षित 'before' ब्लॉक तिथे पेस्ट करा:
+    before(async function() {
+        this.timeout(10000); // मोकाला १० सेकंदाचा वेळ देणे
+        console.log("Waiting for DB and seeding fresh data...");
         
-        // २ सेकंद थांबूया जेणेकरून मूळ कनेक्शन ओपन होईल
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
         try {
+            // १. डेटाबेस कनेक्शन पूर्णपणे ओपन होण्याची वाट पाहणे
+            if (mongoose.connection.readyState !== 1) {
+                await new Promise((resolve) => mongoose.connection.once('open', resolve));
+            }
+
             const planetModel = mongoose.model('planets');
             
-            // १. जुना करप्ट झालेला डेटा साफ करणे
+            // २. जुना डेटा साफ करणे
             await planetModel.deleteMany({});
             console.log("Old data cleared 🧹");
 
-            // २. अचूक डेटा पुन्हा इन्सर्ट करणे (१ ते ८ आयडीसह)
+            // ३. फ्रेश डेटा इन्सर्ट करणे
             const freshPlanets = [
                 { id: 1, name: "Mercury", description: "Closest planet to the Sun", velocity: "47.87 km/s", distance: "57.9 million km" },
                 { id: 2, name: "Venus", description: "Second planet from the Sun", velocity: "35.02 km/s", distance: "108.2 million km" },
@@ -35,8 +39,13 @@ describe('Planets API Suite', () => {
                 { id: 8, name: "Neptune", description: "The most distant planet", velocity: "5.43 km/s", distance: "4.5 billion km" }
             ];
 
+            // गिटहबला इथे डेटा पूर्ण लिहेपर्यंत थांबवणे
             await planetModel.insertMany(freshPlanets);
             console.log("Fresh Solar System Data Seeded Successfully! 🚀");
+
+            // डेटा इन्सर्ट झाल्यावर अजून १ सेकंद अतिरिक्त होल्ड देणे
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            
         } catch (error) {
             console.log("Error during seeding data:", error);
         }
