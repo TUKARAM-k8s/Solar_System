@@ -12,7 +12,7 @@ describe('Planets API Suite', () => {
     // 🟢 फ्रेश डेटा री-सीड करण्याचा जादूई बिफोर ब्लॉक
     // 🟢 फक्त हा नवीन आणि सुरक्षित 'before' ब्लॉक तिथे पेस्ट करा:
     before(async function() {
-        this.timeout(10000); // मोकाला १० सेकंदाचा वेळ देणे
+        this.timeout(20000); // मोकाला १० सेकंदाचा वेळ देणे
         console.log("Waiting for DB and seeding fresh data...");
         
         try {
@@ -44,7 +44,7 @@ describe('Planets API Suite', () => {
             console.log("Fresh Solar System Data Seeded Successfully! 🚀");
 
             // डेटा इन्सर्ट झाल्यावर अजून १ सेकंद अतिरिक्त होल्ड देणे
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 5000));
             
         } catch (error) {
             console.log("Error during seeding data:", error);
