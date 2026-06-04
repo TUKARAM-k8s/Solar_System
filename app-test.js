@@ -44,7 +44,8 @@ describe('Planets API Suite', () => {
             console.log("Fresh Solar System Data Seeded Successfully! 🚀");
 
             // डेटा इन्सर्ट झाल्यावर अजून १ सेकंद अतिरिक्त होल्ड देणे
-            await new Promise((resolve) => setTimeout(resolve, 5000));
+            // 🎯 कंसांच्या आत बरोबर '=>' असा बाण पाहिजे
+            await new Promise((resolve) => setTimeout(() => resolve(), 5000));
             
         } catch (error) {
             console.log("Error during seeding data:", error);
