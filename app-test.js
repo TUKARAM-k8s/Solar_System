@@ -40,7 +40,7 @@ describe('Planets API Suite', () => {
             ];
 
             // गिटहबला इथे डेटा पूर्ण लिहेपर्यंत थांबवणे
-            await planetModel.insertMany(freshPlanets);
+            await planetModel.insertMany(freshPlanets, { ordered: true });
             console.log("Fresh Solar System Data Seeded Successfully! 🚀");
 
             // डेटा इन्सर्ट झाल्यावर अजून १ सेकंद अतिरिक्त होल्ड देणे
