@@ -67,8 +67,11 @@ describe('Planets API Suite', () => {
     });
 
     describe('Fetching Planet Details', () => {
+        // 🟢 फक्त Mercury चा हा ब्लॉक व्हिज्युअल स्टुडिओमध्ये बदलून घ्या:
         it('it should fetch a planet named Mercury', (done) => {
-            let payload = { id: 1 }
+            let payload = {
+                id: 1 // 👈 इथे कोणताही कोट ("") नाहीये, हा शुद्ध नंबर १ आहे याची १००% खात्री करा!
+            }
             chai.request(server)
                 .post('/planet')
                 .send(payload)
