@@ -73,13 +73,10 @@ app.get('/ready', function(req, res) {
 //});
 
 // 🟢 मँगोडीबी कनेक्शन पूर्णपणे ओपन झाल्यावरच सर्व्हर सुरू करणे (इंडस्ट्री बेस्ट प्रॅक्टिस)
-const server = app;
 
 mongoose.connection.once('open', () => {
     if (process.env.NODE_ENV !== 'test') {
-        app.listen(3000, () => {
-            console.log("Server successfully running on port - 3000 ✅");
-        });
+        console.log("MongoDB Connection is fully open and ready! 🚀");
     }
 });
 
