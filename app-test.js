@@ -1,5 +1,10 @@
 let mongoose = require("mongoose");
 let server = require("./app");
+before(function(done) {
+    server.listen(3000, () => {
+        done();
+    });
+});
 let chai = require("chai");
 let chaiHttp = require("chai-http");
 
