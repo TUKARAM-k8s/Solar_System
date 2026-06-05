@@ -96,15 +96,10 @@ jobs:
     name: Containerization
     needs: [unit-testing, code-coverage]
     runs-on: ubuntu-latest
-    env:
-      GHCR_OWNER: ${{ github.repository_owner }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Convert repository name to lowercase
-        run: |
-          echo "GHCR_OWNER=${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]' >> $GITHUB_ENV
 
       - name: Dockerhub Login
         uses: docker/login-action@v2
@@ -157,4 +152,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.GHCR_OWNER }}/solar-system:${{ github.sha }}
+          tags: ghcr.io/tukaram-k8s/solar-system:${{ github.sha }}
