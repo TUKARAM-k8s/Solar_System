@@ -96,9 +96,15 @@ jobs:
     name: Containerization
     needs: [unit-testing, code-coverage]
     runs-on: ubuntu-latest
+    env:
+      GHCR_OWNER: ${{ github.repository_owner }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Convert repository name to lowercase
+        run: |
+          echo "GHCR_OWNER=$${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Dockerhub Login
         uses: docker/login-action@v2
@@ -130,19 +136,25 @@ jobs:
               -e MONGO_PASSWORD=$MONGO_PASSWORD \
               ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
 
+          sleep 3
           export IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' solar-system-app)
           echo "Container IP: $IP"
 
           echo Testing Image URL using wget
           wget -q -O - 127.0.0.1:3000/live | grep live
 
-      - name: Container Registry Push
+      # १. फक्त डॉकर हबसाठी बिल्ड आणि पुश
+      - name: Push to Docker Hub
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: |
-              ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
-              ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
 
-      
+      # २. फक्त GHCR साठी बिल्ड आणि पुश (आता हे फेल झालं तरी वरचं काम झालेलं असेल)
+      - name: Push to GitHub Packages (GHCR)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ env.GHCR_OWNER }}/solar-system:${{ github.sha }}
