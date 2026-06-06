@@ -30,9 +30,6 @@ jobs:
           - node-version: 18
             operating-system: macos-latest
     runs-on: ${{ matrix.operating-system }}
-    
-    env:
-      MONGO_URI: ${{ secrets.MONGO_URI }}
       
     steps:
       - name: Checkout code
