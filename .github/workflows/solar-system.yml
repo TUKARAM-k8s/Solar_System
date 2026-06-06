@@ -19,13 +19,13 @@ jobs:
         ports:
           - 27017:27017
         env:
-          MONGO_URI: 'mongodb//localhost:27017/superData'
+          MONGO_URI: 'mongodb://localhost:27017/superData'
           MONGO_USERNAME: non-prod-user
           MONGO_PASSWORD: non-prod-password
     strategy:
       matrix:
         node-version: [18, 20]
-        operating-system: [ubuntu-latest]
+        operating-system: [ubuntu-latest] ## macos-latest वरून काढलं आहे कारण node 18 साठी काही एरर्स येत आहेत, आणि node 20 साठी macos वर अजून सपोर्ट नाहीये
         exclude:
           - node-version: 18
             operating-system: macos-latest
