@@ -1,5 +1,5 @@
 # १. अधिकृत आणि हलकी मॉंगो इमेज वापरा
-FROM mongo:6.0-alpine
+FROM mongo:6.0
 
 # २. डेटाबेसचे युझरनेम आणि पासवर्ड सेट करा (तुम्हाला हवे ते ठेवू शकता)
 ENV MONGO_INITDB_ROOT_USERNAME=non-prod-user
