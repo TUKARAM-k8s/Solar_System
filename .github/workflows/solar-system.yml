@@ -19,7 +19,7 @@ jobs:
         ports:
           - 27017:27017
     env:
-      MONGO_URI: 'mongodb://localhost:27017/superData'
+      MONGO_URI: 'mongodb://non-prod-user:non-prod-password@localhost:27017/superData?authSource=admin'
       MONGO_USERNAME: non-prod-user
       MONGO_PASSWORD: non-prod-password
     strategy:
