@@ -18,6 +18,9 @@ jobs:
         image: siddharth67/mongo-db:non-prod
         ports:
           - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: non-prod-user
+          MONGO_INITDB_ROOT_PASSWORD: non-prod-password
     env:
       MONGO_URI: 'mongodb://non-prod-user:non-prod-password@localhost:27017/superData?authSource=admin'
       MONGO_USERNAME: non-prod-user
