@@ -19,9 +19,9 @@ jobs:
         ports:
           - 27017:27017
     env:
-      MONGO_URI: 'mongodb://non-prod-user:non-prod-password@localhost:27017/superData?authSource=admin'
-      MONGO_USERNAME: non-prod-user
-      MONGO_PASSWORD: non-prod-password
+      MONGO_URI: 'mongodb://${{ vars.NON_PROD_MONGO_USER }}:${{ secrets.NON_PROD_MONGO_PASSWORD }}@localhost:27017/non-prod-db?authSource=admin'
+      MONGO_USERNAME: ${{ vars.NON_PROD_MONGO_USER }}
+      MONGO_PASSWORD: ${{ secrets.NON_PROD_MONGO_PASSWORD }}
     strategy:
       matrix:
         node-version: [18, 20]
@@ -115,6 +115,14 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
+      - name: Build and Test non-prod DB MongoDB Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile.mongo
+          push: true
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/mongo-non-prod:v1
+
       - name: GHCR Login
         uses: docker/login-action@v2
         with:
@@ -137,6 +145,8 @@ jobs:
               -e MONGO_URI=$MONGO_URI \
               -e MONGO_USERNAME=$MONGO_USERNAME \
               -e MONGO_PASSWORD=$MONGO_PASSWORD \
+              -e NEW_MONGO_USER=${{ vars.NON_PROD_MONGO_USER }} \
+              -e NEW_MONGO_PASSWORD=${{ secrets.NON_PROD_MONGO_PASSWORD }} \
               ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
 
           sleep 3

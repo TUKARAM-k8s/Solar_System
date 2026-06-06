@@ -1,0 +1,10 @@
+# १. अधिकृत आणि हलकी मॉंगो इमेज वापरा
+FROM mongo:6.0-alpine
+
+# २. डेटाबेसचे युझरनेम आणि पासवर्ड सेट करा (तुम्हाला हवे ते ठेवू शकता)
+ENV MONGO_INITDB_ROOT_USERNAME=non-prod-user
+ENV MONGO_INITDB_ROOT_PASSWORD=non-prod-password
+ENV MONGO_INITDB_DATABASE=non-prod-db
+
+# ३. मॉंगोचा डिफॉल्ट पोर्ट एक्सपोज करा
+EXPOSE 27017
