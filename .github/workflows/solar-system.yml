@@ -199,8 +199,11 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Fetch Kubernetes Cluster Details
+      - name: Create Kubernetes Kind Cluster
+        uses: helm/kind-action@v1
+
+      - name: Verify Cluster Creation
         run: |
           kubectl version --client=true
-          echo ---------------------
+          kubectl cluster-info
           kubectl get nodes
