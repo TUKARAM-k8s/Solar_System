@@ -250,7 +250,7 @@ jobs:
 
       - name: Create MongoDB Secret
         run: |
-          kubectl -n ${{ vars.DEV_NAMESPACE }} create secret generic mongo-secret \
+          kubectl -n ${{ vars.DEV_NAMESPACE }} create secret generic mongo-db-creds \
             --from-literal=MONGO_URI='mongodb://${{ vars.NON_PROD_MONGO_USER }}:${{ secrets.NON_PROD_MONGO_PASSWORD }}@mongo:27017/non-prod-db?authSource=admin' \
             --from-literal=MONGO_USERNAME='${{ vars.NON_PROD_MONGO_USER }}' \
             --from-literal=MONGO_PASSWORD='${{ secrets.NON_PROD_MONGO_PASSWORD }}' \
@@ -283,7 +283,7 @@ jobs:
       - name: Start Port Forwarding
         run: |
           # १. पॉड रेडी होण्याची वाट पाहा (वेळ १८० सेकंद केलाय)
-          kubectl rollout status deployment/solar-system -n development --timeout=180s || (kubectl describe deployment/solar-system -n development && kubectl get pods -n development && exit 1)
+          kubectl rollout status deployment/solar-system -n development --timeout=90s || (kubectl describe deployment/solar-system -n development && kubectl get pods -n development && exit 1)
           
           # २. पोर्ट फॉरवर्डिंग
           kubectl port-forward svc/solar-system -n development 3000:3000 --address 0.0.0.0 &
