@@ -273,17 +273,6 @@ jobs:
         run: |
           echo "DEV_APP_INGRESS_HOST=127.0.0.1" >> "$GITHUB_OUTPUT"
 
-  Integration-testing:
-    name: DEV Integration Testing
-    needs: dev-deployment
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-
       - name: Start Port Forwarding
         run: |
           kubectl port-forward svc/solar-system -n ${{ vars.DEV_NAMESPACE }} 3000:3000 &
