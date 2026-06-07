@@ -282,9 +282,11 @@ jobs:
 
       - name: Start Port Forwarding
         run: |
-          kubectl port-forward svc/solar-system -n ${{ vars.DEV_NAMESPACE }} 3000:3000 &
-          echo "Port forwarding started in the background..."
-          sleep 10 # थोडा वेळ देतोय की पोर्ट फॉरवर्डिंग सुरू होईपर्यंत थांबण्यासाठी
+          # पॉड 'Running' स्टेटसमध्ये येईपर्यंत प्रतीक्षा करा
+          kubectl rollout status deployment/solar-system -n development --timeout=90s
+          # त्यानंतरच पोर्ट फॉरवर्डिंग सुरू करा
+          kubectl port-forward svc/solar-system -n development 3000:3000 --address 0.0.0.0 &
+          sleep 10
 
       - name: Run Integration Tests
         run: |
