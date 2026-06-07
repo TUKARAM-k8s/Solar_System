@@ -282,9 +282,10 @@ jobs:
 
       - name: Start Port Forwarding
         run: |
-          # पॉड 'Running' स्टेटसमध्ये येईपर्यंत प्रतीक्षा करा
-          kubectl rollout status deployment/solar-system -n development --timeout=90s
-          # त्यानंतरच पोर्ट फॉरवर्डिंग सुरू करा
+          # १. पॉड रेडी होण्याची वाट पाहा (वेळ १८० सेकंद केलाय)
+          kubectl rollout status deployment/solar-system -n development --timeout=180s || (kubectl describe deployment/solar-system -n development && kubectl get pods -n development && exit 1)
+          
+          # २. पोर्ट फॉरवर्डिंग
           kubectl port-forward svc/solar-system -n development 3000:3000 --address 0.0.0.0 &
           sleep 10
 
