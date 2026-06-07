@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - feature/**
-
 # 🟢 बदल १: आपण गिटहब सिक्रेटमधून थेट पूर्ण कनेक्शन स्ट्रिंग इथे पास करत आहोत
 env:
   MONGO_URI: ${{ secrets.MONGO_URI }}
@@ -64,8 +63,7 @@ jobs:
         with:
           name: Mocha-test-result
           path: test-results.xml
- 
-          
+  
   code-coverage:
     name: Code Coverage
     container:
@@ -240,7 +238,7 @@ jobs:
         env:
           NAMESPACE: ${{ vars.DEV_NAMESPACE }}
           REPLICAS: ${{ vars.DEV_REPLICAS }}
-          IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+          K8S_IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
           INGRESS_IP: ${{ env.INGRESS_IP }}
 
       - name: Check files
@@ -260,4 +258,4 @@ jobs:
       - name: Deploy to Development Environment
         run: |
           kubectl apply -f kubernetes/development/ -n ${{ vars.DEV_NAMESPACE }}
-          echo "Waiting for the application to be ready..."
+          echo "Waiting for the application to be ready.."
