@@ -292,7 +292,139 @@ jobs:
           kubectl port-forward svc/solar-system -n development 3000:3000 --address 0.0.0.0 &
           sleep 10
 
-      - name: Run Integration Tests
+      - name: Run DEV Integration Tests
+        run: |
+          echo "Testing the application using localhost:3000"
+          
+          # १. curl वापरून डेटा मिळवणे आणि jq वापरून 'status' तपासणे
+          RESPONSE=$(curl -s http://localhost:3000/live)
+          STATUS=$(echo $RESPONSE | jq -r '.status')
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/live)
+
+          echo "Response Status: $STATUS"
+          echo "HTTP Code: $HTTP_CODE"
+
+          # २. कंडिशन चेक करणे
+          if [ "$HTTP_CODE" -eq 200 ] && [ "$STATUS" == "live" ]; then
+            echo "Integration test passed successfully!"
+          else
+            echo "Integration test failed!"
+            exit 1
+          fi
+
+  prod-deployment:
+    name: Deploy to Production Environment
+    needs: dev-deployment
+    environment: 
+      name: production
+      url: https://${{ steps.set-prod-app-ingress-url.outputs.PROD_APP_INGRESS_HOST }}
+    outputs:
+      PROD_APP_INGRESS_URL: ${{ steps.set-prod-app-ingress-url.outputs.PROD_APP_INGRESS_HOST }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to production Environment
+        run: |
+          echo "Deploying to production environment..."
+          
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+     # - name: Create Kubernetes Kind Cluster
+     #   uses: helm/kind-action@v1
+     # we are updating the create k8s kind cluster step to use our custom kind-config.yaml file, which has the necessary port mappings for ingress to work properly
+      - name: Create Kubernetes Kind Cluster for Production
+        uses: helm/kind-action@v1
+        with:
+          config: kind-config.yaml
+
+      - name: Install NGINX Ingress Controller for Production
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+          # इथे आपण थोडा वेळ देतोय की इन्ग्रेस कंट्रोलर पूर्णपणे तयार होईपर्यंत थांबण्यासाठी, कारण कधीकधी तो तयार होण्यासाठी थोडा वेळ घेतो
+          echo "Waiting for NGINX Ingress Controller to be ready..."
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=120s
+
+      - name: Verify Cluster Creation for Production
+        run: |
+          kubectl version --client=true
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Create Namespace in kind cluster for Production
+        run: |
+          kubectl create namespace ${{ vars.PROD_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          echo "PROD Namespace created"
+
+      - name: Set INGRESS_IP variable
+        run: echo "INGRESS_IP=127.0.0.1" >> $GITHUB_ENV
+
+      - name: Replace Token in Manifest files
+        uses: cschleiden/replace-tokens@v1
+        with:
+          tokenPrefix: '${'
+          tokenSuffix: '}'
+          files: '["kubernetes/production/*.yaml"]'
+        env:
+          NAMESPACE: ${{ vars.PROD_NAMESPACE }}
+          REPLICAS: ${{ vars.PROD_REPLICAS }}
+          K8S_IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+          INGRESS_IP: ${{ env.INGRESS_IP }}
+
+      - name: Check files
+        run: |
+          echo "Checking the replaced manifest files..."
+          cat kubernetes/production/*.yaml
+
+      - name: Create MongoDB Secret
+        run: |
+          kubectl -n ${{ vars.PROD_NAMESPACE }} create secret generic mongo-db-creds \
+            --from-literal=MONGO_URI='mongodb://${{ vars.NON_PROD_MONGO_USER }}:${{ secrets.NON_PROD_MONGO_PASSWORD }}@mongo:27017/non-prod-db?authSource=admin' \
+            --from-literal=MONGO_USERNAME='${{ vars.NON_PROD_MONGO_USER }}' \
+            --from-literal=MONGO_PASSWORD='${{ secrets.NON_PROD_MONGO_PASSWORD }}' \
+            --save-config \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to Production Environment
+        run: |
+          # आधी deployment आणि service अप्लाय करा
+          kubectl apply -f kubernetes/production/deployment.yaml -n ${{ vars.PROD_NAMESPACE }}
+          kubectl apply -f kubernetes/production/service.yaml -n ${{ vars.PROD_NAMESPACE }}
+          
+          # थोडा वेळ थांबा
+          sleep 10
+          
+          # शेवटी ingress अप्लाय करा
+          kubectl apply -f kubernetes/production/ingress.yaml -n ${{ vars.PROD_NAMESPACE }}
+
+      - name: Verify Production Deployment
+        run: |
+          kubectl -n ${{ vars.PROD_NAMESPACE }} get all
+          kubectl get ingress -n ${{ vars.PROD_NAMESPACE }}
+          kubectl get secrets -n ${{ vars.PROD_NAMESPACE }}
+
+      - name: Set Prod App Ingress Host URL
+        id: set-prod-app-ingress-url
+        run: |
+          echo "PROD_APP_INGRESS_HOST=127.0.0.1" >> "$GITHUB_OUTPUT"
+
+      - name: Start Port Forwarding
+        run: |
+          # १. पॉड रेडी होण्याची वाट पाहा (वेळ १८० सेकंद केलाय)
+          kubectl rollout status deployment/solar-system -n production --timeout=90s || (kubectl describe deployment/solar-system -n production && kubectl get pods -n production && exit 1)
+          
+          # २. पोर्ट फॉरवर्डिंग
+          kubectl port-forward svc/solar-system -n production 3000:3000 --address 0.0.0.0 &
+          sleep 10
+
+      - name: Run PROD Integration Tests
         run: |
           echo "Testing the application using localhost:3000"
           
