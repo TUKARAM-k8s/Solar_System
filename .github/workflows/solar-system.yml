@@ -183,6 +183,8 @@ jobs:
   dev-deployment:
     name: Deploy to Development Environment
     needs: docker
+    outputs:
+      DEV_APP_INGRESS_URL: ${{ steps.set-dev-app-ingress-url.outputs.DEV_APP_INGRESS_HOST }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -265,4 +267,45 @@ jobs:
           kubectl -n ${{ vars.DEV_NAMESPACE }} get all
           kubectl get ingress -n ${{ vars.DEV_NAMESPACE }}
           kubectl get secrets -n ${{ vars.DEV_NAMESPACE }}
-          kubectl get ing -n ${{ vars.DEV_NAMESPACE }}
+
+      - name: Set Dev App Ingress Host URL
+        id: set-dev-app-ingress-url
+        run: |
+          echo "DEV_APP_INGRESS_HOST=127.0.0.1" >> "$GITHUB_OUTPUT"
+
+  Integration-testing:
+    name: DEV Integration Testing
+    needs: dev-deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Start Port Forwarding
+        run: |
+          kubectl port-forward svc/solar-system -n ${{ vars.DEV_NAMESPACE }} 3000:3000 &
+          echo "Port forwarding started in the background..."
+          sleep 10 # थोडा वेळ देतोय की पोर्ट फॉरवर्डिंग सुरू होईपर्यंत थांबण्यासाठी
+
+      - name: Run Integration Tests
+        run: |
+          echo "Testing the application using localhost:3000"
+          
+          # १. curl वापरून डेटा मिळवणे आणि jq वापरून 'status' तपासणे
+          RESPONSE=$(curl -s http://localhost:3000/live)
+          STATUS=$(echo $RESPONSE | jq -r '.status')
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/live)
+
+          echo "Response Status: $STATUS"
+          echo "HTTP Code: $HTTP_CODE"
+
+          # २. कंडिशन चेक करणे
+          if [ "$HTTP_CODE" -eq 200 ] && [ "$STATUS" == "live" ]; then
+            echo "Integration test passed successfully!"
+          else
+            echo "Integration test failed!"
+            exit 1
+          fi
