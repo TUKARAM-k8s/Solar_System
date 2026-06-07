@@ -182,6 +182,7 @@ jobs:
 
   dev-deployment:
     name: Deploy to Development Environment
+    if: contains(github.ref, 'feature/')
     needs: docker
     environment: 
       name: development
@@ -314,6 +315,7 @@ jobs:
 
   prod-deployment:
     name: Deploy to Production Environment
+    if: github.ref == 'refs/heads/main'
     needs: dev-deployment
     environment: 
       name: production
