@@ -223,6 +223,11 @@ jobs:
           kubectl cluster-info
           kubectl get nodes
 
+      - name: Create Namespace
+        run: |
+          kubectl create namespace ${{ vars.DEV_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          echo "Namespace created"
+
       - name: Set INGRESS_IP variable
         run: echo "INGRESS_IP=127.0.0.1" >> $GITHUB_ENV
 
