@@ -242,3 +242,17 @@ jobs:
         run: |
           echo "Checking the replaced manifest files..."
           cat kubernetes/development/*.yaml
+
+      - name: Create MongoDB Secret
+        run: |
+          kubectl -n ${{ vars.DEV_NAMESPACE }} create secret generic mongo-secret \
+            --from-literal=MONGO_URI='mongodb://${{ vars.NON_PROD_MONGO_USER }}:${{ secrets.NON_PROD_MONGO_PASSWORD }}@mongo:27017/non-prod-db?authSource=admin' \
+            --from-literal=MONGO_USERNAME='${{ vars.NON_PROD_MONGO_USER }}' \
+            --from-literal=MONGO_PASSWORD='${{ secrets.NON_PROD_MONGO_PASSWORD }}' \
+            --save-config \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to Development Environment
+        run: |
+          kubectl apply -f kubernetes/development/ -n ${{ vars.DEV_NAMESPACE }}
+          echo "Waiting for the application to be ready..."
