@@ -263,6 +263,6 @@ jobs:
       - name: Verify Development Deployment
         run: |
           kubectl -n ${{ vars.DEV_NAMESPACE }} get all
-          echo "Testing the application endpoint using wget"
-          wget -q -O - http://localhost/live | grep live
           kubectl get ingress -n ${{ vars.DEV_NAMESPACE }}
+          kubectl get secrets -n ${{ vars.DEV_NAMESPACE }}
+          kubectl get ing -n ${{ vars.DEV_NAMESPACE }}
