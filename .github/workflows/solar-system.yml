@@ -87,7 +87,7 @@ jobs:
           MONGO_INITDB_DATABASE: ${{ vars.DB_NAME }}
 
     env:
-      MONGO_URI: mongodb://${{ vars.MONGO_USER }}:${{ secrets.MONGO_PASSWORD }}@localhost:27017/${{ vars.DB_NAME }}?authSource=admin
+      MONGO_URI: mongodb://${{ vars.MONGO_USER }}:${{ secrets.MONGO_PASSWORD }}@mongo-db:27017/${{ vars.DB_NAME }}?authSource=admin
       MONGO_USERNAME: ${{ vars.MONGO_USER }}
       MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
     runs-on: ubuntu-latest
