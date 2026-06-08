@@ -16,7 +16,7 @@ jobs:
       name: development
     services:
       mongo-db:
-        image: tukaram124/solar-system-db:v1
+        image: tukaram124/mongo-non-prod:v1
         ports:
           - 27017:27017
         env:
@@ -78,7 +78,7 @@ jobs:
       image: node:18
     services:
       mongo-db:
-        image: tukaram124/solar-system-db:v1
+        image: tukaram124/mongo-non-prod:v1
         ports:
           - 27017:27017
         env:
