@@ -271,6 +271,11 @@ jobs:
             --save-config \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Verify MongoDB Secret
+        run: |
+          kubectl -n ${{ vars.DEV_NAMESPACE }} get secret mongo-db-creds -o jsonpath="{.data.MONGO_USERNAME}" | base64 -d
+          echo
+
       - name: Deploy to Development Environment
         run: |
           # आधी deployment आणि service अप्लाय करा
@@ -409,6 +414,11 @@ jobs:
             --from-literal=MONGO_PASSWORD='${{ secrets.MONGO_PASSWORD }}' \
             --save-config \
             --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Verify MongoDB Secret
+        run: |
+          kubectl -n ${{ vars.PROD_NAMESPACE }} get secret mongo-db-creds -o jsonpath="{.data.MONGO_USERNAME}" | base64 -d
+          echo
 
       - name: Deploy to Production Environment
         run: |
