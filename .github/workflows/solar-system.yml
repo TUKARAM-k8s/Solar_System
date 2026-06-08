@@ -16,7 +16,7 @@ jobs:
       name: development
     services:
       mongo-db:
-        image: tukaram124/mongo-non-prod:v1
+        image: tukaram124/solar-system-db:v1
         ports:
           - 27017:27017
         env:
@@ -78,7 +78,7 @@ jobs:
       image: node:18
     services:
       mongo-db:
-        image: tukaram124/mongo-non-prod:v1
+        image: tukaram124/solar-system-db:v1
         ports:
           - 27017:27017
         env:
@@ -143,8 +143,8 @@ jobs:
 
       - name: Build and Test DB MongoDB Image
         run: |
-          docker build -t ${{ vars.DOCKERHUB_USERNAME }}/mongo-non-prod:v1 -f ./Dockerfile.mongo .
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/mongo-non-prod:v1
+          docker build -t ${{ vars.DOCKERHUB_USERNAME }}/solar-system-db:v1 -f ./Dockerfile.mongo .
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/solar-system-db:v1
 
       - name: GHCR Login
         uses: docker/login-action@v2
