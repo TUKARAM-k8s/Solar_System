@@ -16,7 +16,7 @@ jobs:
       name: development
     services:
       mongo-db:
-        image: tukaram124/mongo-non-prod:v1
+        image: tukaram124/solar-system-db:v1
         ports:
           - 27017:27017
         env:
@@ -78,7 +78,7 @@ jobs:
       image: node:18
     services:
       mongo-db:
-        image: tukaram124/mongo-non-prod:v1
+        image: tukaram124/solar-system-db:v1
         ports:
           - 27017:27017
         env:
@@ -111,6 +111,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Wait for MongoDB
+        run: |
+          echo "Waiting for MongoDB..."
+          sleep 20
+
       - name: Check code coverage
         continue-on-error: true
         run: npm run coverage
@@ -123,7 +128,7 @@ jobs:
           retention-days: 5
 
   docker:
-    name: Containerization
+    name: docker-Containerization
     needs: [unit-testing, code-coverage]
     #environment:
      # name: development
