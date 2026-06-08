@@ -193,7 +193,6 @@ jobs:
 
   dev-deployment:
     name: Deploy to Development Environment
-    if: contains(github.ref, 'feature/')
     needs: docker
     environment: 
       name: development
