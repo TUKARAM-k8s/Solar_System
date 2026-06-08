@@ -64,7 +64,7 @@ jobs:
         run: npm test -- --timeout 15000
 
       - name: Archive Test Result
-        if: always()  # हे सुनिश्चित करेल की टेस्ट फेल झाल्यासही हा स्टेप रन होईल
+        if: always()  # हे सुनिश्चित करेल की टेस्ट फेल झाल्यासही हा स्टेप रन होईल..
         uses: actions/upload-artifact@v4
         with:
           name: Mocha-test-result
