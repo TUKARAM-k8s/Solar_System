@@ -289,6 +289,12 @@ jobs:
           kubectl get ingress -n ${{ vars.DEV_NAMESPACE }}
           kubectl get secrets -n ${{ vars.DEV_NAMESPACE }}
 
+      - name: Verify Environment Values
+        run: |
+          echo "Environment: Development"
+          echo "DB_NAME=${{ vars.DB_NAME }}"
+          echo "MONGO_USER=${{ vars.MONGO_USER }}"
+
       - name: Set Dev App Ingress Host URL
         id: set-dev-app-ingress-url
         run: |
@@ -421,6 +427,12 @@ jobs:
           kubectl -n ${{ vars.PROD_NAMESPACE }} get all
           kubectl get ingress -n ${{ vars.PROD_NAMESPACE }}
           kubectl get secrets -n ${{ vars.PROD_NAMESPACE }}
+
+      - name: Verify Environment Values
+        run: |
+          echo "Environment: Production"
+          echo "DB_NAME=${{ vars.DB_NAME }}"
+          echo "MONGO_USER=${{ vars.MONGO_USER }}"
 
       - name: Set Prod App Ingress Host URL
         id: set-prod-app-ingress-url
