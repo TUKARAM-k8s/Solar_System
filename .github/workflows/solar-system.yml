@@ -12,16 +12,22 @@ env:
 jobs:
   unit-testing:
     name: Unit Testing
+    environment:
+      name: development
     services:
       mongo-db:
         image: tukaram124/mongo-non-prod:v1
         ports:
           - 27017:27017
-      
+        env:
+          MONGO_INITDB_ROOT_USERNAME: ${{ vars.MONGO_USER }}
+          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+          MONGO_INITDB_DATABASE: ${{ vars.DB_NAME }}
+
     env:
-      MONGO_URI: 'mongodb://${{ vars.NON_PROD_MONGO_USER }}:${{ secrets.NON_PROD_MONGO_PASSWORD }}@localhost:27017/non-prod-db?authSource=admin'
-      MONGO_USERNAME: ${{ vars.NON_PROD_MONGO_USER }}
-      MONGO_PASSWORD: ${{ secrets.NON_PROD_MONGO_PASSWORD }}
+      MONGO_URI: mongodb://${{ vars.MONGO_USER }}:${{ secrets.MONGO_PASSWORD }}@localhost:27017/${{ vars.DB_NAME }}?authSource=admin
+      MONGO_USERNAME: ${{ vars.MONGO_USER }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
 
     strategy:
       matrix:
@@ -66,17 +72,24 @@ jobs:
   
   code-coverage:
     name: Code Coverage
+    environment:
+      name: development
     container:
       image: node:18
     services:
       mongo-db:
         image: tukaram124/mongo-non-prod:v1
-        options: 
-            --name mongo
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: ${{ vars.MONGO_USER }}
+          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+          MONGO_INITDB_DATABASE: ${{ vars.DB_NAME }}
+
     env:
-      MONGO_URI: 'mongodb://${{ vars.NON_PROD_MONGO_USER }}:${{ secrets.NON_PROD_MONGO_PASSWORD }}@mongo:27017/non-prod-db?authSource=admin'
-      MONGO_USERNAME: ${{ vars.NON_PROD_MONGO_USER }}
-      MONGO_PASSWORD: ${{ secrets.NON_PROD_MONGO_PASSWORD }}
+      MONGO_URI: mongodb://${{ vars.MONGO_USER }}:${{ secrets.MONGO_PASSWORD }}@localhost:27017/${{ vars.DB_NAME }}?authSource=admin
+      MONGO_USERNAME: ${{ vars.MONGO_USER }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -112,6 +125,8 @@ jobs:
   docker:
     name: Containerization
     needs: [unit-testing, code-coverage]
+    #environment:
+     # name: development
     permissions:
       packages: write
     runs-on: ubuntu-latest
@@ -126,7 +141,7 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Build and Test non-prod DB MongoDB Image
+      - name: Build and Test DB MongoDB Image
         run: |
           docker build -t ${{ vars.DOCKERHUB_USERNAME }}/mongo-non-prod:v1 -f ./Dockerfile.mongo .
           docker push ${{ vars.DOCKERHUB_USERNAME }}/mongo-non-prod:v1
@@ -151,10 +166,6 @@ jobs:
           docker run --name solar-system-app -d \
               -p 3000:3000 \
               -e MONGO_URI=$MONGO_URI \
-              -e MONGO_USERNAME=$MONGO_USERNAME \
-              -e MONGO_PASSWORD=$MONGO_PASSWORD \
-              -e NEW_MONGO_USER=${{ vars.NON_PROD_MONGO_USER }} \
-              -e NEW_MONGO_PASSWORD=${{ secrets.NON_PROD_MONGO_PASSWORD }} \
               ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
 
           sleep 3
@@ -255,9 +266,9 @@ jobs:
       - name: Create MongoDB Secret
         run: |
           kubectl -n ${{ vars.DEV_NAMESPACE }} create secret generic mongo-db-creds \
-            --from-literal=MONGO_URI='mongodb://${{ vars.NON_PROD_MONGO_USER }}:${{ secrets.NON_PROD_MONGO_PASSWORD }}@mongo:27017/non-prod-db?authSource=admin' \
-            --from-literal=MONGO_USERNAME='${{ vars.NON_PROD_MONGO_USER }}' \
-            --from-literal=MONGO_PASSWORD='${{ secrets.NON_PROD_MONGO_PASSWORD }}' \
+            --from-literal=MONGO_URI='mongodb://${{ vars.MONGO_USER }}:${{ secrets.MONGO_PASSWORD }}@mongo:27017/${{ vars.DB_NAME }}?authSource=admin' \
+            --from-literal=MONGO_USERNAME='${{ vars.MONGO_USER }}' \
+            --from-literal=MONGO_PASSWORD='${{ secrets.MONGO_PASSWORD }}' \
             --save-config \
             --dry-run=client -o yaml | kubectl apply -f -
 
@@ -388,9 +399,9 @@ jobs:
       - name: Create MongoDB Secret
         run: |
           kubectl -n ${{ vars.PROD_NAMESPACE }} create secret generic mongo-db-creds \
-            --from-literal=MONGO_URI='mongodb://${{ vars.NON_PROD_MONGO_USER }}:${{ secrets.NON_PROD_MONGO_PASSWORD }}@mongo:27017/non-prod-db?authSource=admin' \
-            --from-literal=MONGO_USERNAME='${{ vars.NON_PROD_MONGO_USER }}' \
-            --from-literal=MONGO_PASSWORD='${{ secrets.NON_PROD_MONGO_PASSWORD }}' \
+            --from-literal=MONGO_URI='mongodb://${{ vars.MONGO_USER }}:${{ secrets.MONGO_PASSWORD }}@mongo:27017/${{ vars.DB_NAME }}?authSource=admin' \
+            --from-literal=MONGO_USERNAME='${{ vars.MONGO_USER }}' \
+            --from-literal=MONGO_PASSWORD='${{ secrets.MONGO_PASSWORD }}' \
             --save-config \
             --dry-run=client -o yaml | kubectl apply -f -
 
