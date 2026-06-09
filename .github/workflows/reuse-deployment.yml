@@ -1,0 +1,145 @@
+name: Deployment - Reusable Workflow
+
+on:
+    workflow_call: 
+
+jobs:
+    reuse-deployment:
+        environment: 
+            name: development
+            url: https://${{ steps.set-dev-app-ingress-url.outputs.DEV_APP_INGRESS_HOST }}
+        outputs:
+             DEV_APP_INGRESS_URL: ${{ steps.set-dev-app-ingress-url.outputs.DEV_APP_INGRESS_HOST }}
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Deploy to Development Environment
+          run: |
+            echo "Deploying to development environment..."
+            
+        - name: Install kubectl
+          uses: azure/setup-kubectl@v3
+          with:
+            version: 'latest'
+     # - name: Create Kubernetes Kind Cluster
+     #   uses: helm/kind-action@v1
+     # we are updating the create k8s kind cluster step to use our custom kind-config.yaml file, which has the necessary port mappings for ingress to work properly
+        - name: Create Kubernetes Kind Cluster
+          uses: helm/kind-action@v1
+          with:
+            config: kind-config.yaml
+
+        - name: Install NGINX Ingress Controller
+          run: |
+            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+            # इथे आपण थोडा वेळ देतोय की इन्ग्रेस कंट्रोलर पूर्णपणे तयार होईपर्यंत थांबण्यासाठी, कारण कधीकधी तो तयार होण्यासाठी थोडा वेळ घेतो
+            echo "Waiting for NGINX Ingress Controller to be ready..."
+            kubectl wait --namespace ingress-nginx \
+                --for=condition=ready pod \
+                --selector=app.kubernetes.io/component=controller \
+                --timeout=120s
+
+        - name: Verify Cluster Creation
+          run: |
+            kubectl version --client=true
+            kubectl cluster-info
+            kubectl get nodes
+
+        - name: Create Namespace
+          run: |
+            kubectl create namespace ${{ vars.DEV_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+            echo "Namespace created"
+
+        - name: Set INGRESS_IP variable
+          run: echo "INGRESS_IP=127.0.0.1" >> $GITHUB_ENV
+
+        - name: Replace Token in Manifest files
+          uses: cschleiden/replace-tokens@v1
+          with:
+            tokenPrefix: '${'
+            tokenSuffix: '}'
+            files: '["kubernetes/development/*.yaml"]'
+          env:
+              NAMESPACE: ${{ vars.DEV_NAMESPACE }}
+              REPLICAS: ${{ vars.DEV_REPLICAS }}
+              K8S_IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+              INGRESS_IP: ${{ env.INGRESS_IP }}
+
+        - name: Check files
+          run: |
+            echo "Checking the replaced manifest files..."
+            cat kubernetes/development/*.yaml
+
+        - name: Create MongoDB Secret
+          run: |
+            kubectl -n ${{ vars.DEV_NAMESPACE }} create secret generic mongo-db-creds \
+                --from-literal=MONGO_URI='mongodb://${{ vars.MONGO_USER }}:${{ secrets.MONGO_PASSWORD }}@mongo:27017/${{ vars.DB_NAME }}?authSource=admin' \
+                --from-literal=MONGO_USERNAME='${{ vars.MONGO_USER }}' \
+                --from-literal=MONGO_PASSWORD='${{ secrets.MONGO_PASSWORD }}' \
+                --save-config \
+                --dry-run=client -o yaml | kubectl apply -f -
+
+        - name: Verify MongoDB Secret
+          run: |
+            kubectl -n ${{ vars.DEV_NAMESPACE }} get secret mongo-db-creds -o jsonpath="{.data.MONGO_USERNAME}" | base64 -d
+            echo
+
+        - name: Deploy to Development Environment
+          run: |
+            # आधी deployment आणि service अप्लाय करा
+            kubectl apply -f kubernetes/development/deployment.yaml -n ${{ vars.DEV_NAMESPACE }}
+            kubectl apply -f kubernetes/development/service.yaml -n ${{ vars.DEV_NAMESPACE }}
+            
+            # थोडा वेळ थांबा
+            sleep 10
+            
+            # शेवटी ingress अप्लाय करा
+            kubectl apply -f kubernetes/development/ingress.yaml -n ${{ vars.DEV_NAMESPACE }}
+
+        - name: Verify Development Deployment
+          run: |
+            kubectl -n ${{ vars.DEV_NAMESPACE }} get all
+            kubectl get ingress -n ${{ vars.DEV_NAMESPACE }}
+            kubectl get secrets -n ${{ vars.DEV_NAMESPACE }}
+
+        - name: Verify Environment Values
+          run: |
+            echo "Environment: Development"
+            echo "DB_NAME=${{ vars.DB_NAME }}"
+            echo "MONGO_USER=${{ vars.MONGO_USER }}"
+
+        - name: Set Dev App Ingress Host URL
+          id: set-dev-app-ingress-url
+          run: |
+            echo "DEV_APP_INGRESS_HOST=127.0.0.1" >> "$GITHUB_OUTPUT"
+
+        - name: Start Port Forwarding
+          run: |
+            # १. पॉड रेडी होण्याची वाट पाहा (वेळ १८० सेकंद केलाय)
+            kubectl rollout status deployment/solar-system -n development --timeout=90s || (kubectl describe deployment/solar-system -n development && kubectl get pods -n development && exit 1)
+            
+            # २. पोर्ट फॉरवर्डिंग
+            kubectl port-forward svc/solar-system -n development 3000:3000 --address 0.0.0.0 &
+            sleep 10
+
+        - name: Run DEV Integration Tests
+          run: |
+            echo "Testing the application using localhost:3000"
+            
+            # १. curl वापरून डेटा मिळवणे आणि jq वापरून 'status' तपासणे
+            RESPONSE=$(curl -s http://localhost:3000/live)
+            STATUS=$(echo $RESPONSE | jq -r '.status')
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/live)
+
+            echo "Response Status: $STATUS"
+            echo "HTTP Code: $HTTP_CODE"
+
+            # २. कंडिशन चेक करणे
+            if [ "$HTTP_CODE" -eq 200 ] && [ "$STATUS" == "live" ]; then
+                echo "Integration test passed successfully!"
+            else
+                echo "Integration test failed!"
+                exit 1
+            fi
