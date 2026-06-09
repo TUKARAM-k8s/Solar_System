@@ -201,6 +201,9 @@ jobs:
     needs: docker
     uses: TUKARAM-k8s/solar_system/.github/workflows/reuse-deployment.yml@main
     secrets: inherit
+    with:
+      environment: development
+      K8s-manifest-dir: 'kubernetes/development/'
 
   prod-deployment:
     name: Deploy to Production Environment

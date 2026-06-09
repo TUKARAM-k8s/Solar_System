@@ -2,6 +2,22 @@ name: Deployment - Reusable Workflow
 
 on:
     workflow_call: 
+      inputs:
+        kubectl_version:
+          description: 'Provide the required kubectl version. Default is v1.26.0'
+          default: 'v1.26.0'
+          required: false
+          type: string
+        K8s-manifest-dir:
+          description: 'Provide the directory path where the Kubernetes manifest files are located.'
+          default: 'kubernetes/development/*.yaml'
+          required: true
+          type: string
+        environment:
+          description: 'Provide the deployment environment name (e.g., development, staging, production) for which the deployment is being performed.'
+          default: 'development'
+          required: true
+          type: string
       secrets:
         MONGO_PASSWORD:
           required: true
@@ -11,7 +27,7 @@ on:
 jobs:
     reuse-deployment:
         environment: 
-            name: development
+            name: ${{ inputs.environment }}
             url: https://${{ steps.set-dev-app-ingress-url.outputs.DEV_APP_INGRESS_HOST }}
         outputs:
              DEV_APP_INGRESS_URL: ${{ steps.set-dev-app-ingress-url.outputs.DEV_APP_INGRESS_HOST }}
@@ -24,10 +40,10 @@ jobs:
           run: |
             echo "Deploying to development environment..."
             
-        - name: Install kubectl
+        - name: Install kubectl CLI
           uses: azure/setup-kubectl@v3
           with:
-            version: 'latest'
+            version: '${{ inputs.kubectl_version }}'
      # - name: Create Kubernetes Kind Cluster
      #   uses: helm/kind-action@v1
      # we are updating the create k8s kind cluster step to use our custom kind-config.yaml file, which has the necessary port mappings for ingress to work properly
@@ -65,7 +81,7 @@ jobs:
           with:
             tokenPrefix: '${'
             tokenSuffix: '}'
-            files: '["kubernetes/development/*.yaml"]'
+            files: '["${{ inputs.K8s-manifest-dir }}*.yaml"]'
           env:
               NAMESPACE: ${{ vars.DEV_NAMESPACE }}
               REPLICAS: ${{ vars.DEV_REPLICAS }}
@@ -75,7 +91,7 @@ jobs:
         - name: Check files
           run: |
             echo "Checking the replaced manifest files..."
-            cat kubernetes/development/*.yaml
+            cat ${{ inputs.K8s-manifest-dir }}*.yaml
 
         - name: Create MongoDB Secret
           run: |
@@ -94,8 +110,8 @@ jobs:
         - name: Deploy to Development Environment
           run: |
             # आधी deployment आणि service अप्लाय करा
-            kubectl apply -f kubernetes/development/deployment.yaml -n ${{ vars.DEV_NAMESPACE }}
-            kubectl apply -f kubernetes/development/service.yaml -n ${{ vars.DEV_NAMESPACE }}
+            kubectl apply -f ${{ inputs.K8s-manifest-dir }}/deployment.yaml -n ${{ vars.DEV_NAMESPACE }}
+            kubectl apply -f ${{ inputs.K8s-manifest-dir }}/service.yaml -n ${{ vars.DEV_NAMESPACE }}
             
             # थोडा वेळ थांबा
             sleep 10
