@@ -2,6 +2,11 @@ name: Deployment - Reusable Workflow
 
 on:
     workflow_call: 
+      secrets:
+        MONGO_PASSWORD:
+          required: true
+        DOCKERHUB_PASSWORD:
+          required: true
 
 jobs:
     reuse-deployment:
