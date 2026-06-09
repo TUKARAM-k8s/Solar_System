@@ -10,7 +10,7 @@ on:
           type: string
         K8s-manifest-dir:
           description: 'Provide the directory path where the Kubernetes manifest files are located.'
-          default: 'kubernetes/development/*.yaml'
+          default: 'kubernetes/development'
           required: true
           type: string
         environment:
@@ -26,19 +26,19 @@ on:
 
 jobs:
     reuse-deployment:
-        environment: 
+        environment:
             name: ${{ inputs.environment }}
-            url: https://${{ steps.set-dev-app-ingress-url.outputs.DEV_APP_INGRESS_HOST }}
+            url: https://${{ steps.set-app-ingress-url.outputs.APP_INGRESS_HOST }}
         outputs:
-             DEV_APP_INGRESS_URL: ${{ steps.set-dev-app-ingress-url.outputs.DEV_APP_INGRESS_HOST }}
+            APP_INGRESS_URL: ${{ steps.set-app-ingress-url.outputs.APP_INGRESS_HOST }}
         runs-on: ubuntu-latest
         steps:
         - name: Checkout code
           uses: actions/checkout@v4
 
-        - name: Deploy to Development Environment
+        - name: Deploy Application to ${{ inputs.environment }} Environment
           run: |
-            echo "Deploying to development environment..."
+            echo "Deploying Application to ${{ inputs.environment }} environment..."
             
         - name: Install kubectl CLI
           uses: azure/setup-kubectl@v3
@@ -70,7 +70,7 @@ jobs:
 
         - name: Create Namespace
           run: |
-            kubectl create namespace ${{ vars.DEV_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+            kubectl create namespace ${{ vars.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
             echo "Namespace created"
 
         - name: Set INGRESS_IP variable
@@ -81,21 +81,21 @@ jobs:
           with:
             tokenPrefix: '${'
             tokenSuffix: '}'
-            files: '["${{ inputs.K8s-manifest-dir }}*.yaml"]'
+            files: '["${{ inputs.K8s-manifest-dir }}/*.yaml"]'
           env:
-              NAMESPACE: ${{ vars.DEV_NAMESPACE }}
-              REPLICAS: ${{ vars.DEV_REPLICAS }}
+              NAMESPACE: ${{ vars.NAMESPACE }}
+              REPLICAS: ${{ vars.REPLICAS }}
               K8S_IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
               INGRESS_IP: ${{ env.INGRESS_IP }}
 
         - name: Check files
           run: |
             echo "Checking the replaced manifest files..."
-            cat ${{ inputs.K8s-manifest-dir }}*.yaml
+            cat ${{ inputs.K8s-manifest-dir }}/*.yaml
 
         - name: Create MongoDB Secret
           run: |
-            kubectl -n ${{ vars.DEV_NAMESPACE }} create secret generic mongo-db-creds \
+            kubectl -n ${{ vars.NAMESPACE }} create secret generic mongo-db-creds \
                 --from-literal=MONGO_URI='mongodb://${{ vars.MONGO_USER }}:${{ secrets.MONGO_PASSWORD }}@mongo:27017/${{ vars.DB_NAME }}?authSource=admin' \
                 --from-literal=MONGO_USERNAME='${{ vars.MONGO_USER }}' \
                 --from-literal=MONGO_PASSWORD='${{ secrets.MONGO_PASSWORD }}' \
@@ -104,48 +104,48 @@ jobs:
 
         - name: Verify MongoDB Secret
           run: |
-            kubectl -n ${{ vars.DEV_NAMESPACE }} get secret mongo-db-creds -o jsonpath="{.data.MONGO_USERNAME}" | base64 -d
+            kubectl -n ${{ vars.NAMESPACE }} get secret mongo-db-creds -o jsonpath="{.data.MONGO_USERNAME}" | base64 -d
             echo
 
-        - name: Deploy to Development Environment
+        - name: Deploy to ${{ inputs.environment }} Environment
           run: |
             # आधी deployment आणि service अप्लाय करा
-            kubectl apply -f ${{ inputs.K8s-manifest-dir }}/deployment.yaml -n ${{ vars.DEV_NAMESPACE }}
-            kubectl apply -f ${{ inputs.K8s-manifest-dir }}/service.yaml -n ${{ vars.DEV_NAMESPACE }}
+            kubectl apply -f ${{ inputs.K8s-manifest-dir }}/deployment.yaml -n ${{ vars.NAMESPACE }}
+            kubectl apply -f ${{ inputs.K8s-manifest-dir }}/service.yaml -n ${{ vars.NAMESPACE }}
             
             # थोडा वेळ थांबा
             sleep 10
             
             # शेवटी ingress अप्लाय करा
-            kubectl apply -f kubernetes/development/ingress.yaml -n ${{ vars.DEV_NAMESPACE }}
+            kubectl apply -f ${{ inputs.K8s-manifest-dir }}/ingress.yaml -n ${{ vars.NAMESPACE }}
 
-        - name: Verify Development Deployment
+        - name: Verify ${{ inputs.environment }} Deployment
           run: |
-            kubectl -n ${{ vars.DEV_NAMESPACE }} get all
-            kubectl get ingress -n ${{ vars.DEV_NAMESPACE }}
-            kubectl get secrets -n ${{ vars.DEV_NAMESPACE }}
+            kubectl -n ${{ vars.NAMESPACE }} get all
+            kubectl get ingress -n ${{ vars.NAMESPACE }}
+            kubectl get secrets -n ${{ vars.NAMESPACE }}
 
         - name: Verify Environment Values
           run: |
-            echo "Environment: Development"
+            echo "Environment: ${{ inputs.environment }}"
             echo "DB_NAME=${{ vars.DB_NAME }}"
             echo "MONGO_USER=${{ vars.MONGO_USER }}"
 
-        - name: Set Dev App Ingress Host URL
-          id: set-dev-app-ingress-url
+        - name: Set App Ingress Host URL
+          id: set-app-ingress-url
           run: |
-            echo "DEV_APP_INGRESS_HOST=127.0.0.1" >> "$GITHUB_OUTPUT"
+            echo "APP_INGRESS_HOST=127.0.0.1" >> "$GITHUB_OUTPUT"
 
         - name: Start Port Forwarding
           run: |
             # १. पॉड रेडी होण्याची वाट पाहा (वेळ १८० सेकंद केलाय)
-            kubectl rollout status deployment/solar-system -n development --timeout=90s || (kubectl describe deployment/solar-system -n development && kubectl get pods -n development && exit 1)
+            kubectl rollout status deployment/solar-system -n ${{ vars.NAMESPACE }} --timeout=90s || (kubectl describe deployment/solar-system -n ${{ vars.NAMESPACE }} && kubectl get pods -n ${{ vars.NAMESPACE }} && exit 1)
             
             # २. पोर्ट फॉरवर्डिंग
-            kubectl port-forward svc/solar-system -n development 3000:3000 --address 0.0.0.0 &
+            kubectl port-forward svc/solar-system -n ${{ vars.NAMESPACE }} 3000:3000 --address 0.0.0.0 &
             sleep 10
 
-        - name: Run DEV Integration Tests
+        - name: Run Integration Tests
           run: |
             echo "Testing the application using localhost:3000"
             
