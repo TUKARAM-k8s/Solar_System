@@ -127,11 +127,44 @@ jobs:
           path: coverage
           retention-days: 5
 
-  
+  reports:
+    name: Merge Test Reports
+    needs: [unit-testing, code-coverage]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    
+    steps:
+      - name: Download Unit Test Results
+        uses: actions/download-artifact@v4
+        with:
+          name: Mocha-test-result
+          path: artifacts/mocha
+
+      - name: Download Code Coverage Results
+        uses: actions/download-artifact@v4
+        with:
+          name: Code-Coverage-Result
+          path: artifacts/coverage
+
+      - name: Merge Test Reports
+        run: |
+          echo "Merging Test Reports..."
+          mkdir -p reports-${{ github.sha }}
+          cp artifacts/mocha/test-results.xml reports-${{ github.sha }}/ || true
+          cp -r artifacts/coverage/* reports-${{ github.sha }}/ || true
+          echo "Final Reports Structure:"
+          find reports-${{ github.sha }}
+
+      - name: Upload Merged Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: Combined-Test-Reports
+          path: reports-${{ github.sha }}
+          retention-days: 5
 
   docker:
     name: docker-Containerization
-    needs: [unit-testing, code-coverage]
+    needs: reports
     #environment:
      # name: development
     permissions:
