@@ -170,18 +170,19 @@ jobs:
 
       - name: Merge Test Reports
         run: |
-          echo "Merging Test Reports..."
-          mkdir -p reports-${{ github.sha }}
-          cp artifacts/mocha/test-results.xml reports-${{ github.sha }}/ || true
-          cp -r artifacts/coverage/* reports-${{ github.sha }}/ || true
+          echo "Creating reports directory..."
+          mkdir -p reports
+          cp artifacts/node18/test-results.xml reports/test-results-node18.xml
+          cp artifacts/node20/test-results.xml reports/test-results-node20.xml
+          cp -r artifacts/coverage reports/
           echo "Final Reports Structure:"
-          find reports-${{ github.sha }}
+          find reports
 
       - name: Upload Merged Reports
         uses: actions/upload-artifact@v4
         with:
           name: Combined-Test-Reports
-          path: reports-${{ github.sha }}
+          path: reports
           retention-days: 5
 
   docker:
