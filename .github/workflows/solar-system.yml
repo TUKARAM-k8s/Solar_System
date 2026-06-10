@@ -139,17 +139,34 @@ jobs:
     continue-on-error: true
     
     steps:
-      - name: Download Unit Test Results
+      - name: Download Node18 Test Results
         uses: actions/download-artifact@v4
         with:
-          name: Mocha-test-result-${{ matrix.node-version }}
-          path: artifacts/mocha
+          name: Mocha-test-result-18
+          path: artifacts/node18
+
+      - name: Download Node20 Test Results
+        uses: actions/download-artifact@v4
+        with:
+          name: Mocha-test-result-20
+          path: artifacts/node20
 
       - name: Download Code Coverage Results
         uses: actions/download-artifact@v4
         with:
           name: Code-Coverage-Result
           path: artifacts/coverage
+
+      - name: Verify Downloaded Artifacts
+        run: |
+          echo "===== Node18 ====="
+          find artifacts/node18
+
+          echo "===== Node20 ====="
+          find artifacts/node20
+
+          echo "===== Coverage ====="
+          find artifacts/coverage
 
       - name: Merge Test Reports
         run: |
