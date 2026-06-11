@@ -284,17 +284,49 @@ jobs:
       - name: Send Slack Notification
         uses: 8398a7/action-slack@v3
         with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author
+          status: custom
+          custom_payload: |
+            {
+              "text": "🚀 Deployment Status",
+              "attachments": [
+                {
+                  "color": "${{ needs.dev-deployment.result == 'success' && 'good' || 'danger' }}",
+                  "fields": [
+                    {
+                      "title": "Repository",
+                      "value": "${{ github.event.repository.name }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Environment",
+                      "value": "${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Branch",
+                      "value": "${{ github.ref_name }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Commit",
+                      "value": "${{ github.sha }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Triggered By",
+                      "value": "${{ github.actor }}",
+                      "short": true
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "button",
+                      "text": "View Workflow",
+                      "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_USERNAME: 'Tukaram-DevOps-Lab'
-          SLACK_CHANNEL: 'github-actions-ci-cd-notifications'
-          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
-          SLACK_ICON_EMOJI: ':rocket:'
-          SLACK_TITLE: "Solar System Pipeline Status"
-          SLACK_MESSAGE: |
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
-            Author: ${{ github.actor }}
