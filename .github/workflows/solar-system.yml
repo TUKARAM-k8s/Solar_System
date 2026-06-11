@@ -48,16 +48,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
+      - name: Composite Action - Cache & Install NPM Packages
+        uses: ./.github/custom-actions/npm-action
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        run: npm ci
+          path-of-folder: ~/.npm
 
       - name: Unit Testing
         id: nodejs-unit-testing-step
@@ -105,16 +99,10 @@ jobs:
      #   with:
      #     node-version: 18
 
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
+      - name: Composite Action - Cache & Install NPM Packages
+        uses: ./.github/custom-actions/npm-action
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        run: npm ci
+          path-of-folder: ~/.npm
 
       - name: Wait for MongoDB
         run: |
@@ -290,7 +278,7 @@ jobs:
               "text": "🚀 Deployment Status",
               "attachments": [
                 {
-                  "color": "${{ needs.dev-deployment.result == 'success' && 'good' || 'danger' }}",
+                  "color": "${{ job.status == 'success' && 'good' || 'danger' }}",
                   "fields": [
                     {
                       "title": "Repository",
