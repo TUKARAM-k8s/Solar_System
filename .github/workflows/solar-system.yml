@@ -272,3 +272,29 @@ jobs:
     with:
       environment: production
       K8s-manifest-dir: 'kubernetes/production'
+
+  slack-notification:
+    name: Slack Notification
+    needs: [dev-deployment, prod-deployment]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Send Slack Notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_USERNAME: 'Tukaram-DevOps-Lab'
+          SLACK_CHANNEL: 'github-actions-ci-cd-notifications'
+          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
+          SLACK_ICON_EMOJI: ':rocket:'
+          SLACK_TITLE: "Solar System Pipeline Status"
+          SLACK_MESSAGE: |
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
